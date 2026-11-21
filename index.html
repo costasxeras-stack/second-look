@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Second Look · Allegro car parts search teardown</title>
+<meta name="description" content="A product teardown of Allegro search for car parts: eight logged test queries, what works, what breaks, and a redesigned flow that reads the car from the query.">
+<meta name="theme-color" content="#e65100">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e65100'/%3E%3Ccircle cx='14' cy='14' r='6' stroke='white' stroke-width='3' fill='none'/%3E%3Cpath d='M18.5 18.5l6 6' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600;7..72,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=1">
+<style>
+:root{--accent:#e65100;--soft:#fff3e0}
+.hero{padding:34px 0 6px}
+.hero .kicker{font:600 12.5px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.hero h1{font-size:clamp(30px,4.6vw,44px);line-height:1.1;margin-top:10px;max-width:24ch}
+.hero p{color:var(--muted);font-size:18px;max-width:70ch;margin:12px 0 0}
+.journey{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.step{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff;position:relative}
+.step .n{font:700 13px var(--body);color:var(--accent)}
+.step h3{font:600 16px var(--body);margin:4px 0 8px}
+.step ul{margin:0;padding-left:18px;font-size:14px;display:grid;gap:4px}
+.step .g{color:#2e7d32}.step .b{color:#c62828}
+.qlist{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.qbox{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+.serp{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.serp .bar{background:#f3f1ec;padding:9px 12px;font:600 13.5px var(--body);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.serp ol{margin:0;padding:6px 12px 10px 34px;font-size:14px;display:grid;gap:6px}
+.serp li.p{color:#8d4b00}
+.serp li.p::after{content:" Promoted";font:600 11px var(--body);background:#ffe0b2;color:#8d4b00;border-radius:999px;padding:1px 7px;margin-left:6px}
+.facts{display:grid;gap:6px;font-size:14.5px}
+.facts div{display:flex;justify-content:space-between;border-bottom:1px solid #f0ede7;padding:5px 0}
+.facts b{font-variant-numeric:tabular-nums}
+.f{border-left:4px solid;border-radius:0 12px 12px 0;padding:12px 14px;margin-top:10px;font-size:15px}
+.f.c{border-color:#2e7d32;background:#f1f8f1}.f.h{border-color:#ef6c00;background:#fff8ef}
+.f .tag{font:600 11.5px var(--body);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px}
+.f.c .tag{color:#2e7d32}.f.h .tag{color:#ef6c00}
+.sc{display:grid;grid-template-columns:200px 1fr 120px;gap:12px;align-items:center;margin-top:10px;font-size:14.5px}
+.sc .t{height:12px;background:#eeebe5;border-radius:6px;overflow:hidden}.sc .t i{display:block;height:100%}
+.sc select{padding:4px 6px;font-size:13px}
+.sc small{grid-column:1/-1;color:var(--muted);font-size:13px;margin-top:-6px}
+.total{font:700 46px/1 var(--display);color:var(--accent)}
+.mock{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+.phone{border:1px solid var(--line);border-radius:22px;padding:14px;background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.05)}
+.phone .sbox{border:2px solid var(--accent);border-radius:10px;padding:8px 10px;font-size:14px}
+.phone .chip2{display:inline-flex;gap:6px;align-items:center;background:#e8f5e9;color:#1b5e20;border-radius:999px;padding:5px 10px;font:600 13px var(--body);margin:10px 6px 0 0}
+.phone .chip2.o{background:#fff3e0;color:#8d4b00}
+.phone .card2{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:10px;font-size:13.5px}
+.fit{font:600 12px var(--body);border-radius:6px;padding:2px 7px;display:inline-block;margin-top:4px}
+.fit.y{background:#e8f5e9;color:#1b5e20}.fit.n{background:#ffebee;color:#b71c1c}.fit.u{background:#f3f1ec;color:#5d5952}
+.phone h4{font:600 13px var(--body);color:var(--faint);text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px}
+.dim{opacity:.45}
+@media (max-width:980px){.journey{grid-template-columns:1fr 1fr}.qbox,.mock{grid-template-columns:1fr}}
+@media (max-width:600px){.journey{grid-template-columns:1fr}.sc{grid-template-columns:1fr 70px;gap:6px}.sc .t{grid-column:1/-1;order:3}.hero p{font-size:16.5px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="./"><i><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="3.5" stroke="white" stroke-width="2" fill="none"/><path d="M9.5 9.5l3.5 3.5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></i>Second Look</a>
+  <nav><a class="hide-sm" href="https://github.com/costasxeras-stack/second-look">GitHub</a><a href="https://kostasxeras.com/">Portfolio</a></nav>
+</div></header>
+<main class="wrap">
+  <section class="hero">
+    <span class="kicker">Product teardown · Allegro · car parts search</span>
+    <h1>The query said "Golf 7". The results did not hear it.</h1>
+    <p>I searched Allegro the way a driver does: "klocki hamulcowe golf 7", brake pads for a Volkswagen Golf Mk7. I logged eight queries on 21 November 2026 and counted what came back. Search finds the right category and handles typos well. It does not read the car from the query, so the shopper has to fill in the vehicle filter or check every listing by hand. This is the teardown, and a redesign.</p>
+  </section>
+
+  <section class="card">
+    <h2>The journey, step by step</h2>
+    <p class="sub">Green is what works. Red is where the shopper does extra work or takes a risk.</p>
+    <div class="journey">
+      <div class="step"><span class="n">1</span><h3>Type the query</h3><ul><li class="g">Typo "hamulocwe" handled silently</li><li class="g">Category detected: brake pads</li><li class="b">No suggestion to pick the car while typing</li></ul></div>
+      <div class="step"><span class="n">2</span><h3>Vehicle filter</h3><ul><li class="g">Shown first, above results</li><li class="g">VIN entry for exact matching</li><li class="b">Brand and model left empty, though the query names both</li></ul></div>
+      <div class="step"><span class="n">3</span><h3>Results</h3><ul><li class="g">Part numbers and brands on every card</li><li class="g">Offers grouped per product with counts</li><li class="b">No "fits your car" label without the filter</li><li class="b">Front and rear pads mixed</li><li class="b">Promoted listings titled for older generations near the top</li></ul></div>
+      <div class="step"><span class="n">4</span><h3>Decide</h3><ul><li class="g">Delivery date and total price with delivery shown</li><li class="g">Ratings and recent purchases</li><li class="b">Shopper must check fitment in each listing</li></ul></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Test log: eight queries</h2>
+    <p class="sub" id="cond"></p>
+    <div class="qlist" id="qlist" role="group" aria-label="Queries"></div>
+    <div class="qbox">
+      <div class="serp"><div class="bar"><span id="q-q"></span><span id="q-n"></span></div><ol id="q-top"></ol></div>
+      <div><div class="facts" id="q-facts"></div><p class="sub" id="q-note" style="margin-top:10px"></p></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>What I found</h2>
+    <div class="f c"><span class="tag">Confirmed in the test log</span><b>The car in the query barely changes the results.</b> "golf 9", a generation number not on sale at the time of the test, returned 11,517 offers with no warning, more than "golf 7" (10,098). Only 4 of the 60 results on page 1 for "golf 7" name the Golf 7 in the title. The vehicle filter above the results stays empty.</div>
+    <div class="f c"><span class="tag">Confirmed in the test log</span><b>Promoted listings titled for other cars sit near the top.</b> A promoted front and rear pad set whose title names Golf 5 and 6 and Passat, not Golf 7, appeared at position 4 for "golf 7", at positions 1 and 2 with a typo or "golf 9", and in the top 4 for the bare query.</div>
+    <div class="f c"><span class="tag">Confirmed in the test log</span><b>Words for position work, the car model does not.</b> Adding "przód" (front) moved page 1 from 28 front and 15 rear titles to 37 front and 1 rear.</div>
+    <div class="f c"><span class="tag">Confirmed in the test log</span><b>Part number search finds the part, then pads the list.</b> "0986494660" puts the exact Bosch part first, then shows 42 other part numbers on page 1 and a count of 9,419 offers.</div>
+    <div class="f c"><span class="tag">Confirmed in the test log</span><b>English queries are much less precise.</b> "brake pads golf 7" returned 56,862 offers, 5.6 times the Polish query, with brake discs and kits among the promoted results.</div>
+    <div class="f h"><span class="tag">Hypothesis, not tested</span><b>The other part numbers may be deliberate equivalents.</b> If Allegro maps the part to compatible parts, the long list is a feature. The page does not say so, which is the problem either way.</div>
+    <div class="f h"><span class="tag">Hypothesis, not tested</span><b>Shoppers who skip the filter return more parts.</b> Wrong-fit purchases are a known cost in car parts e-commerce. I cannot see Allegro's return data, so the size is [unknown].</div>
+  </section>
+
+  <section class="card">
+    <h2>Scorecard</h2>
+    <p class="sub">My judgement on six questions, 1 to 5, based on the test log. Change the weights to match what matters for your marketplace.</p>
+    <div id="score"></div>
+    <div class="row" style="align-items:center;margin-top:16px"><span class="total" id="total">–</span><span class="sub" style="margin:0">weighted score out of 5</span></div>
+  </section>
+
+  <section class="card">
+    <h2>The redesign: read the car from the query</h2>
+    <p class="sub">Same query, two versions. Toggle the fitment state to see how the results change. Illustrative: product names and fit labels are placeholders, not checked against a parts catalogue.</p>
+    <div class="seg" role="group" aria-label="Vehicle state"><button type="button" data-s="detect" aria-pressed="true">Car detected from query</button><button type="button" data-s="confirm" aria-pressed="false">Shopper confirmed engine</button></div>
+    <div class="mock">
+      <div class="phone"><h4>Today</h4><div class="sbox">klocki hamulcowe golf 7</div><div class="card2"><b>Enter vehicle details</b><div class="sub" style="margin:4px 0 0">Brand · Model · Engine, all empty</div></div>
+        <div class="card2">Front brake pads, brand A<br><span class="fit u">Fit not shown</span></div>
+        <div class="card2">Rear brake pads, brand B<br><span class="fit u">Fit not shown</span></div>
+        <div class="card2" style="background:#fffaf2">Brake pads for an older generation <span class="pill warn">Promoted</span><br><span class="fit u">Fit not shown</span></div>
+      </div>
+      <div class="phone"><h4>Proposed</h4><div class="sbox">klocki hamulcowe golf 7</div>
+        <div id="chips"></div>
+        <div id="res"></div>
+      </div>
+    </div>
+    <h3 style="font:600 16px var(--body);margin-top:20px">What changes</h3>
+    <ol class="sub" style="padding-left:20px;display:grid;gap:6px">
+      <li><b>Parse the vehicle from the query</b> (brand, model, generation in numbers or Roman numerals) and pre-fill the filter as a chip the shopper can remove. Ask only for what the query cannot tell, usually the engine.</li>
+      <li><b>Label fit on every card</b>: fits, does not fit, or check engine. Even before the engine is known, generation alone rules out many parts.</li>
+      <li><b>Hold promoted listings to the same fitment rule.</b> An ad for a Golf 5 part should not outrank a Golf 7 part for a Golf 7 query.</li>
+      <li><b>Say when a model is not recognised.</b> "We do not know a Golf 9. Did you mean Golf 8?" is better than 11,517 silent results.</li>
+      <li><b>Split exact part number matches from equivalents</b> with a heading, so 9,419 offers become "1 exact part, [n] equivalents".</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2>How I would measure it</h2>
+    <div style="overflow-x:auto"><table><thead><tr><th>Measure</th><th>Definition</th><th>Target</th></tr></thead><tbody>
+      <tr><td>Vehicle set rate</td><td>Share of car parts searches that end with a vehicle selected</td><td>[baseline] to [target]</td></tr>
+      <tr><td>Wrong-fit returns</td><td>Returns with reason "does not fit" per 1,000 car parts orders</td><td>[baseline] down [x]%</td></tr>
+      <tr><td>Search to purchase</td><td>Conversion of car parts searches with a vehicle in the query</td><td>[target]</td></tr>
+      <tr><td>Guardrail: ad revenue</td><td>Promoted listing revenue in car parts</td><td>No drop beyond [x]%</td></tr>
+    </tbody></table></div>
+    <p class="sub" style="margin-top:10px">I would test vehicle parsing and fit labels first, as an A/B test on car parts queries that name a model. The fitment rule for ads is a business decision and needs its own test.</p>
+  </section>
+
+  <section class="card">
+    <h2>Method and limits</h2>
+    <ul class="sub" style="padding-left:20px;display:grid;gap:6px">
+      <li>Eight queries, run once each on 21 November 2026 on allegro.pl in desktop Chrome, signed in, with the interface set to English. Offer titles appear machine-translated. Results can differ by account, location, time and device.</li>
+      <li>Counts come from the page: the offer count in the header and the titles of the first page of results. A title that does not name the Golf 7 may still fit it. That is the point: the shopper cannot tell from the results page.</li>
+      <li>I did not fill the vehicle filter, buy anything or contact sellers. I have no access to Allegro data. Allegro is not involved in this teardown.</li>
+      <li>Why this matters to me: I work on search for an automotive parts catalogue, where fitment is the hardest part of relevance.</li>
+    </ul>
+  </section>
+</main>
+<footer><div class="wrap"><span>Second Look v0.1.0 by <a href="https://kostasxeras.com/">Konstantinos Xeras</a>, built with Claude (Anthropic). <a href="https://github.com/costasxeras-stack/second-look">Test log, code and decisions on GitHub</a>.</span></div></footer>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var fmt = function (n) { return n == null ? 'not recorded' : n.toLocaleString('en-US'); };
+  fetch('data/tests.json').then(function (r) { return r.json(); }).then(function (D) {
+    $('cond').textContent = 'Captured ' + D.captured + '. ' + D.conditions;
+    $('qlist').innerHTML = D.tests.map(function (t, i) { return '<button type="button" class="chip" data-i="' + i + '" aria-pressed="' + (i === 1) + '">' + esc(t.query) + '</button>'; }).join('');
+    function show(i) {
+      var t = D.tests[i]; document.querySelectorAll('#qlist .chip').forEach(function (c) { c.setAttribute('aria-pressed', +c.getAttribute('data-i') === i); });
+      $('q-q').textContent = '"' + t.query + '"'; $('q-n').textContent = fmt(t.offers) + ' offers';
+      $('q-top').innerHTML = t.top.map(function (x) { var p = x.indexOf('[Promoted] ') === 0; return '<li' + (p ? ' class="p"' : '') + '>' + esc(x.replace('[Promoted] ', '')) + '</li>'; }).join('');
+      var F = [['Intent', t.intent], ['Offers in header', fmt(t.offers)], ['Results on page 1', t.page1]];
+      if (t.promoted) F.push(['Promoted positions on page 1', t.promoted.join(', ')]);
+      if (t.golf7_titles != null) F.push(['Titles naming Golf 7 or VII', t.golf7_titles + ' of ' + t.page1]);
+      if (t.golf_titles != null) F.push(['Titles naming any Golf', t.golf_titles + ' of ' + t.page1]);
+      if (t.front_titles != null) F.push(['Titles saying front / rear', t.front_titles + ' / ' + t.rear_titles]);
+      if (t.fit_labels != null) F.push(['Cards with a fit label', t.fit_labels]);
+      if (t.exact_titles != null) F.push(['Titles with the exact part number', t.exact_titles + ' of ' + t.page1]);
+      if (t.pad_titles != null) F.push(['Titles that are brake pads', t.pad_titles + ' of ' + t.page1]);
+      $('q-facts').innerHTML = F.map(function (f) { return '<div><span>' + esc(f[0]) + '</span><b>' + esc(f[1]) + '</b></div>'; }).join('');
+      $('q-note').textContent = t.notes;
+    }
+    $('qlist').addEventListener('click', function (e) { var b = e.target.closest('[data-i]'); if (b) show(+b.getAttribute('data-i')); });
+    show(1);
+  }).catch(function () { $('cond').textContent = 'The test log could not be loaded. Open the page through a web server.'; });
+
+  var S = [['Understands the query', 3, 'Category and typos yes. Vehicle and generation no.'], ['Relevance of top results', 2, 'Top 5 rarely confirm the car. Front and rear mixed.'], ['Fitment confidence', 2, 'Strong tools (vehicle filter, VIN) that the query does not trigger.'], ['Ads fit the intent', 2, 'Promoted listings titled for other generations near the top.'], ['Feedback when unsure', 1, 'No message for an unknown model or for loose part number matches.'], ['Decision support', 4, 'Part numbers, total price with delivery, delivery dates, ratings.']];
+  var W = [3, 3, 3, 2, 1, 2];
+  function score() {
+    var tot = 0, ws = 0;
+    $('score').innerHTML = S.map(function (s, i) { var col = s[1] >= 4 ? '#2e7d32' : s[1] === 3 ? '#ef6c00' : '#c62828'; tot += s[1] * W[i]; ws += W[i]; return '<div class="sc"><span>' + esc(s[0]) + ' <b>' + s[1] + '/5</b></span><span class="t"><i style="width:' + s[1] * 20 + '%;background:' + col + '"></i></span><label style="margin:0;font-size:13px;display:flex;gap:6px;align-items:center">weight <select data-w="' + i + '">' + [0, 1, 2, 3].map(function (w) { return '<option' + (w === W[i] ? ' selected' : '') + '>' + w + '</option>'; }).join('') + '</select></label><small>' + esc(s[2]) + '</small></div>'; }).join('');
+    $('total').textContent = ws ? (tot / ws).toFixed(1) : '–';
+  }
+  $('score').addEventListener('change', function (e) { if (e.target.dataset.w != null) { W[+e.target.dataset.w] = +e.target.value; score(); } });
+  score();
+
+  var state = 'detect';
+  function mock() {
+    var conf = state === 'confirm';
+    $('chips').innerHTML = '<span class="chip2">✓ Volkswagen Golf VII ✕</span>' + (conf ? '<span class="chip2">✓ 1.4 TSI ✕</span><span class="chip2">Front axle ✕</span>' : '<span class="chip2 o">+ Add engine for exact fit</span>');
+    var R = conf ? [['Front brake pads, brand A', 'y', 'Fits your Golf VII 1.4 TSI'], ['Front brake pads, brand B', 'y', 'Fits your Golf VII 1.4 TSI'], ['Front brake pads, brand C', 'y', 'Fits your Golf VII 1.4 TSI']]
+      : [['Front brake pads, brand A', 'u', 'Fits some Golf VII engines. Add engine'], ['Rear brake pads, brand B', 'u', 'Fits some Golf VII engines. Add engine'], ['Promoted: brake pads for an older generation', 'n', 'Does not fit Golf VII. Moved down']];
+    $('res').innerHTML = R.map(function (r) { return '<div class="card2' + (r[1] === 'n' ? ' dim' : '') + '">' + esc(r[0]) + '<br><span class="fit ' + r[1] + '">' + esc(r[2]) + '</span></div>'; }).join('');
+  }
+  document.querySelector('[data-s]').parentNode.addEventListener('click', function (e) { var b = e.target.closest('[data-s]'); if (!b) return; state = b.getAttribute('data-s'); document.querySelectorAll('[data-s]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); mock(); });
+  mock();
+})();
+</script>
+</body>
+</html>

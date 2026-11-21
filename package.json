@@ -1,0 +1,10 @@
+{
+  "name": "second-look",
+  "version": "0.1.0",
+  "description": "A product teardown of Allegro search for car parts, with a logged test of eight queries and a redesigned flow.",
+  "private": true,
+  "scripts": {
+    "serve": "python3 -m http.server 8000"
+  },
+  "license": "MIT"
+}
