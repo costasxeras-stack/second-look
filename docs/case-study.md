@@ -80,4 +80,4 @@ Full record: [decisions/0003-placeholder-mockup.md](decisions/0003-placeholder-m
 
 ## My role
 
-I framed the problem, made the product calls, checked every number and wrote the conclusions. Claude (Anthropic) wrote the code with me. 
+I framed the problem, made the product calls, checked every number and wrote the conclusions. 

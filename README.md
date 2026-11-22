@@ -63,9 +63,9 @@ These are the measures I would propose to Allegro's search team. I have no acces
 2. Add 20 more queries across other car makes and part types
 3. Test the redesign as a clickable prototype with [number] drivers
 
-## How it was built
+## My role
 
-I framed the problem, made the product calls and wrote the conclusions. Claude (Anthropic) was my engineering partner for the code. 
+I framed the problem, made the product calls and wrote the conclusions. 
 
 ## Run it yourself
 
